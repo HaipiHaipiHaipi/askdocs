@@ -6,15 +6,19 @@ from dotenv import load_dotenv
 from openai import APIConnectionError, APIStatusError, OpenAI
 
 load_dotenv(override=True)
+MODEL = os.getenv("ASK_MODEL", "deepseek-flash")
+TEMPERATURE = float(os.getenv("ASK_TEMPERATURE", "0"))
+THINKING = os.getenv("ASK_THINKING", "disabled")
+PRICES = {
+    "deepseek-flash": (1.0, 4.0),
+    "deepseek-v4-pro": (4.5, 13.5),
+}
+PRICE_IN, PRICE_OUT = PRICES.get(MODEL, (1.0, 4.0))
 
 client = OpenAI(
     api_key=os.environ["DEEPSEEK_API_KEY"],
     base_url="https://api.deepseek.com",
 )
-
-PRICE_IN = 1.0
-PRICE_OUT = 4.0
-
 
 @dataclass
 class Usage:
@@ -58,12 +62,12 @@ usage = Usage()
 def chat(messages: list[dict], on_delta: Callable[[str], None] | None = None) -> str:
     try:
         r = client.chat.completions.create(
-            model="deepseek-flash",
+            model=MODEL,
             messages=messages,
             stream=True,
             stream_options={"include_usage": True},
-            temperature=0,
-            extra_body={"thinking": {"type": "disabled"}},
+            temperature=TEMPERATURE,
+            extra_body={"thinking": {"type": THINKING}},
         )
     except APIConnectionError:
         raise LLMError("连不上服务器，检查网络或代理") from None
@@ -87,6 +91,7 @@ def chat(messages: list[dict], on_delta: Callable[[str], None] | None = None) ->
         content = chunk.choices[0].delta.content
         if content:
             ans.append(content)
+            # print(ans)
             if on_delta:
                 on_delta(content)
     return "".join(ans)

@@ -1,10 +1,10 @@
-from getdoc import retrieve
+from getdoc import pick_blocks, retrieve
 from llm import LLMError, chat, usage
 
 SYSTEM_PROMPT = (
     "只依据用户提供的文档回答。文档里没有的，明确说「文档未提及」，不要用常识补充。"
 )
-DOC_PATH = "docs/sample.md"
+DOC_PATH = "docs-vue/src/api/reactivity-core.md"
 
 
 def show(piece: str) -> None:
@@ -12,7 +12,7 @@ def show(piece: str) -> None:
 
 
 def main() -> None:
-    doc_text = retrieve(DOC_PATH)
+    blocks = retrieve(DOC_PATH)
 
     history: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
@@ -31,10 +31,12 @@ def main() -> None:
             print(usage.summary())
             continue
         try:
+            picked = pick_blocks(q, blocks=blocks)
+            context = "\n\n".join(b["body"] for b in picked)
             history.append(
                 {
                     "role": "user",
-                    "content": f"【文档】\n{doc_text}\n\n【问题】\n{q}",
+                    "content": f"【文档】\n{context}\n\n【问题】\n{q}",
                 }
             )
             print("助教 > ", end="", flush=True)

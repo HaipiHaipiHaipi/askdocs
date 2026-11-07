@@ -11,6 +11,7 @@ __pycache__/
 
 # 克隆的文档仓库
 docs/
+docs-vue/
 
 # 编辑器
 .vscode/
