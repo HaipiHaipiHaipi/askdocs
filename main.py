@@ -5,14 +5,14 @@ SYSTEM_PROMPT = (
     "只依据用户提供的文档回答。文档里没有的，明确说「文档未提及」，不要用常识补充。"
 )
 DOC_PATH = "docs-vue/src/api/reactivity-core.md"
-
+doc_path = "docs/sample.md"
 
 def show(piece: str) -> None:
     print(piece, end="", flush=True)
 
 
 def main() -> None:
-    blocks = retrieve(DOC_PATH)
+    blocks = retrieve(doc_path)
 
     history: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 

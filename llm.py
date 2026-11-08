@@ -14,11 +14,23 @@ PRICES = {
     "deepseek-v4-pro": (4.5, 13.5),
 }
 PRICE_IN, PRICE_OUT = PRICES.get(MODEL, (1.0, 4.0))
-
+SEARCH_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "search_docs",
+        "description": "在本地技术文档中搜索与问题相关的段落。当你不确定答案时调用。",
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "搜索关键词"}},
+            "required": ["query"],
+        },
+    },
+}
 client = OpenAI(
     api_key=os.environ["DEEPSEEK_API_KEY"],
     base_url="https://api.deepseek.com",
 )
+
 
 @dataclass
 class Usage:
@@ -59,7 +71,9 @@ class LLMError(Exception):
 usage = Usage()
 
 
-def chat(messages: list[dict], on_delta: Callable[[str], None] | None = None) -> str:
+def chat(
+    messages: list[dict], on_delta: Callable[[str], None] | None = None, tools=None
+) -> str:
     try:
         r = client.chat.completions.create(
             model=MODEL,
