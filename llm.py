@@ -72,17 +72,26 @@ usage = Usage()
 
 
 def chat(
-    messages: list[dict], on_delta: Callable[[str], None] | None = None, tools=None
+    messages: list[dict],
+    on_delta: Callable[[str], None] | None = None,
+    tools=None,
+    json_mode=False,
 ) -> str:
+    kwargs = {
+        "model": MODEL,
+        "messages": messages,
+        "stream": True,
+        "stream_options": {"include_usage": True},
+        "temperature": TEMPERATURE,
+        "extra_body": {"thinking": {"type": THINKING}},
+    }
+    if tools:
+        kwargs["tools"] = tools
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+
     try:
-        r = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            stream=True,
-            stream_options={"include_usage": True},
-            temperature=TEMPERATURE,
-            extra_body={"thinking": {"type": THINKING}},
-        )
+        r = client.chat.completions.create(**kwargs)
     except APIConnectionError:
         raise LLMError("连不上服务器，检查网络或代理") from None
     except APIStatusError as e:
@@ -94,7 +103,7 @@ def chat(
             raise LLMError("请求太频繁，等几秒再试") from None
         if e.status_code >= 500:
             raise LLMError("服务端故障，稍后重试") from None
-        raise LLMError(f"请求被拒绝（HTTP {e.status_code}）") from None
+        raise LLMError(f"HTTP {e.status_code}：{e}") from None
 
     ans: list[str] = []
     for chunk in r:
